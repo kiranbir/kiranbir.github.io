@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subclassing vs. Configuration | Way of the Peaceful Coder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=optional" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-title" href="../index.html">Way of the Peaceful Coder</a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="../publications.html">Publications</a>
+    <a href="../blog/index.html" class="active">Blog</a>
+    <a href="../reading.html">Reading</a>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>Subclassing vs. Configuration</h1>
+    <p class="post-meta">November 9, 2013 &middot; 2 min read</p>
+  </header>
+<p>One of the common patterns you’ll see in abstracting and encapsulating device drivers is the usage of subclassing and/or configuration files.</p>
+<h2>Subclassing</h2>
+<p>Subclassing in device drivers isn’t too different than subclassing anywhere else. Below is a quick example.</p>
+<pre><code class="code-cpp"><span class="tok-k">class</span><span class="tok-w"> </span><span class="tok-nc">SerialIO</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">public</span><span class="tok-o">:</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">virtual</span><span class="tok-w"> </span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">write_sync</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">buffer</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">length</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-p">};</span><span class="tok-w"></span>
+
+<span class="tok-k">class</span><span class="tok-w"> </span><span class="tok-nc">USBSerialIO</span><span class="tok-w"> </span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-k">public</span><span class="tok-w"> </span><span class="tok-n">SerialIO</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">public</span><span class="tok-o">:</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">virtual</span><span class="tok-w"> </span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">write_sync</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">buffer</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">length</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-p">};</span><span class="tok-w"></span></code></pre>
+<p>This seems simple and fine now. However, a common issue just in any subclassing case is the inheritance chain can get long and crazy.</p>
+<h2>Configuration Files</h2>
+<p>Configuration files have a different approach. Usually it’s an XML file or even just a header file where you customize what to execute in code, but the implementation is shared. An example is below.</p>
+<pre><code class="code-cpp"><span class="tok-kt">bool</span><span class="tok-w"> </span><span class="tok-nf">send_zlp</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">ConfigurationType</span><span class="tok-w"> </span><span class="tok-n">cfg</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">switch</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">cfg</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nl">CFG_A</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">true</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nl">CFG_B</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">false</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">default</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">false</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">false</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-c1">// may cause unreachable warning in static analysis</span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-nf">write_sync</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">buffer</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">length</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kt">size_t</span><span class="tok-w"> </span><span class="tok-n">written</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">usb_bulk_write</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">buffer</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">length</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">send_zlp</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">__cfg</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">written</span><span class="tok-w"> </span><span class="tok-o">+=</span><span class="tok-w"> </span><span class="tok-n">usb_bulk_write</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">zlp_buffer</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">sizeof</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">zlp_buffer</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">...</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<p>The issues are pretty obvious in this case. Your implementation can get crazy. Although the benefit is you only have to look at one file to customize and one file to debug. The debugging may or may not be straightforward depending on how badly (deeply) the conditions are nested.</p>
+<h2>Summary</h2>
+<p>Which one is better? Yeah, they both sort of suck. It needs to be looked on an application basis. You’ll typically see a lot of bootloaders, scatter/linker files, and UEFI drivers use configuration files such as device trees. This might be due to a limitation of the C++ RT not being loaded early. Similarly, I’ve seen many high-level drivers use inheritance.</p>
+<p>The only suggestion I have is to avoid mixing both together. Although configuration files can make sense in cases like language strings, when you abuse them for timeouts and transfer size while subclassing a driver for the same reason, then you’ll end up requiring developers to constantly look at both to debug your code. Then again, your code has no bugs…</p>
+</article>
+<p class="back-link"><a href="index.html">&larr; All posts</a></p>
+
+</main>
+<footer class="site-footer">
+  <span>&copy; 2026 Kiranbir Sodhia</span>
+  <a href="https://www.linkedin.com/in/kiranbir" target="_blank" rel="noopener">LinkedIn</a>
+</footer>
+</body>
+</html>

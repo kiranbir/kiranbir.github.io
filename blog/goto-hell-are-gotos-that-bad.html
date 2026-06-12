@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>goto hell (Are Gotos That Bad?) | Way of the Peaceful Coder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=optional" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-title" href="../index.html">Way of the Peaceful Coder</a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="../publications.html">Publications</a>
+    <a href="../blog/index.html" class="active">Blog</a>
+    <a href="../reading.html">Reading</a>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>goto hell (Are Gotos That Bad?)</h1>
+    <p class="post-meta">May 19, 2013 &middot; 2 min read</p>
+  </header>
+<p>Never use a goto. Sound like someone you know? It’s something we all heard our high school computer programming teacher or friend say. If you were a nerd and loser in high school like me, they were probably the same person.</p>
+<p>There’s a lot of debate about whether gotos or multiple return points are “really” bad. Some of the reasons they are generally discouraged is because they can lead to producing spaghetti code and the flow of a function make no longer be top-to-bottom. However, there are many places where they make sense. For example, jumping to a common cleanup section before your function returns.</p>
+<p>You’ll often hear people rant about how gotos are bad, but end up using a similar jump pattern for the same functionality just to avoid using the keyword goto.</p>
+<p>Below is a snippet of leaving a function at any point in the code.</p>
+<pre><code class="code-c"><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">function</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// do some work...</span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w">  </span>
+<span class="tok-w">    </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// free resources</span>
+<span class="tok-w">        </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// do more work...</span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">z</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// free resources</span>
+<span class="tok-w">        </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// final work...</span>
+<span class="tok-w">    </span><span class="tok-c1">// free resources</span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-mi">3</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<p>There isn’t anything wrong, however, it might be dangerous if there is allocations that aren’t freed before each return statement. This is why you will often see a goto to a cleanup section.</p>
+<pre><code class="code-c"><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">function</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// do some work...</span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">x</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">ret</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">1</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">goto</span><span class="tok-w"> </span><span class="tok-n">cleanup</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// do more work...</span>
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">z</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">ret</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">2</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">goto</span><span class="tok-w"> </span><span class="tok-n">cleanup</span><span class="tok-o">:</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// final work...</span>
+<span class="tok-w">    </span><span class="tok-n">ret</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">3</span><span class="tok-w"></span>
+
+<span class="tok-nl">cleanup</span><span class="tok-p">:</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// free any of the resources I allocated if they exist</span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">ret</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<p>Here is an example of where someone clearly used a goto in their code, just not in their wording:</p>
+<pre><code class="code-c"><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">function</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">do</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// do some stuff</span>
+<span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">x</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// do more stuff</span>
+<span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">y</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// do more stuff</span>
+<span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">z</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">// do more stuff</span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// free resources</span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">something</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<p>There’s a great rant on this involving Linus Torvalds (<a href="http://kerneltrap.org/node/553/2131).">http://kerneltrap.org/node/553/2131).</a> This is my favorite part from the discussion:</p>
+<pre><code>From: Scott Robert Ladd
+Subject: RE: any chance of 2.6.0-test*?
+Date:   Sun, 12 Jan 2003 19:03:10 -0500
+
+&lt;omitted&gt;
+A &quot;goto&quot; is not, in and of itself, dangerous -- it is a language feature,
+one that directly translates to the jump instructions implemented in machine
+code. Like pointers, operator overloading, and a host of other &quot;perceived&quot;
+evils in programming, &quot;goto&quot; is widely hated by those who&#x27;ve been bitten by
+poor programming. Bad code is the product of bad programmers; in my
+experience, a poor programmer will write a poor program, regardless of the
+availability of &quot;goto.&quot;</code></pre>
+</article>
+<p class="back-link"><a href="index.html">&larr; All posts</a></p>
+
+</main>
+<footer class="site-footer">
+  <span>&copy; 2026 Kiranbir Sodhia</span>
+  <a href="https://www.linkedin.com/in/kiranbir" target="_blank" rel="noopener">LinkedIn</a>
+</footer>
+</body>
+</html>

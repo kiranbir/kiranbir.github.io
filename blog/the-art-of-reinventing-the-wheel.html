@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Art of Reinventing the Wheel | Way of the Peaceful Coder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=optional" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-title" href="../index.html">Way of the Peaceful Coder</a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="../publications.html">Publications</a>
+    <a href="../blog/index.html" class="active">Blog</a>
+    <a href="../reading.html">Reading</a>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>The Art of Reinventing the Wheel</h1>
+    <p class="post-meta">July 17, 2013 &middot; 2 min read</p>
+  </header>
+<blockquote>
+<p>“Sometimes time spent reinventing the wheel results in a revolutionary new rolling device. But sometimes it just amounts to time spent reinventing the wheel.” ― Steve Krug</p>
+</blockquote>
+<p>As a firmware developer, I have been through several rounds of reinventing the wheel. The experience is actually applicable to a lot of engineering and development jobs. It’s solving an issue that somebody has already solved, furthermore, have made public.</p>
+<p>So why do we do it? The answer you’ll probably hear the most is, “Well, we can do it better. We can make it smaller and faster.” You probably can, but nobody cares. I have done some stupid things when I started working on a microcontroller at my first job. I would define a bunch of constants and memory-mapped addresses for consistency with my company’s coding standard. Following this, I would look at the specification and write drivers for various buses from scratch. The result, well … I don’t think anybody every looked at my code. However, I learned a lot. I learned how to use an oscilloscope properly to debug bus protocol issues and I learned more about the bus specification itself.</p>
+<p>So there is your only benefit, learning. However, not all companies can afford paying you an engineering salary for you to learn for your own pleasure. The smaller the company, the more effort you need to place in making your product unique. Don’t worry about recreating something Cocoa does, worry about what your iOS app does. If you pick a mass-produced microcontroller, there are hundreds if not thousands of people using the same microcontroller. You need to put your effort into making your application unique, and not focusing on rewriting the BSP (board support packages) that come with the board. They probably run some form of Linux already. As a customer, I don’t give s**t if you wrote your own operating system.</p>
+<p>Well, that’s my preaching and rant. Have a nice day.</p>
+</article>
+<p class="back-link"><a href="index.html">&larr; All posts</a></p>
+
+</main>
+<footer class="site-footer">
+  <span>&copy; 2026 Kiranbir Sodhia</span>
+  <a href="https://www.linkedin.com/in/kiranbir" target="_blank" rel="noopener">LinkedIn</a>
+</footer>
+</body>
+</html>

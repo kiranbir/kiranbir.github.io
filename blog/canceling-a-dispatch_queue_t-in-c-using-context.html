@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canceling a dispatch_queue_t in C Using Context | Way of the Peaceful Coder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=optional" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-title" href="../index.html">Way of the Peaceful Coder</a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="../publications.html">Publications</a>
+    <a href="../blog/index.html" class="active">Blog</a>
+    <a href="../reading.html">Reading</a>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>Canceling a dispatch_queue_t in C Using Context</h1>
+    <p class="post-meta">August 13, 2013 &middot; 2 min read</p>
+  </header>
+<p>This is a really dirty method to cancel out a queue in C. Whenever a block is added to a queue, it will retain the queue. The queue won’t truly be released after dispatch_release unless there are no pending blocks. A lot of people will use a weak pointer in C++ and Objective-C, but there isn’t anything similar in C, except maybe using a static variable. Furthermore, you might not want to actually abort and flush out your queue. However, there is an easy hack in case none of these really bother you. It involves making use of dispatch_set_context and dispatch_get_context.</p>
+<pre><code class="code-c"><span class="tok-n">dispatch_queue_t</span><span class="tok-w"> </span><span class="tok-nf">m_dispatch_queue_create</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">char</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-w"> </span><span class="tok-n">label</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">dispatch_queue_attr_t</span><span class="tok-w"> </span><span class="tok-n">attr</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">dispatch_queue_t</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">dispatch_queue_create</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">label</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">attr</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">dispatch_set_context</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-nb">true</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"> </span><span class="tok-c1">// mark the queue as available</span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-nf">m_dispatch_release</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">dispatch_queue_t</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// unless the queue is protected, more blocks (upto 1 for serial)</span>
+<span class="tok-w">    </span><span class="tok-c1">// can be queued and executed prior to the next operation.</span>
+<span class="tok-w">    </span><span class="tok-n">dispatch_set_context</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-kt">void</span><span class="tok-o">*</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-nb">false</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w">  </span><span class="tok-c1">// mark the queue as unavailable</span>
+<span class="tok-w">    </span><span class="tok-n">dispatch_release</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-kt">void</span><span class="tok-w"> </span><span class="tok-nf">m_dispatch_async</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">dispatch_queue_t</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">dispatch_block_t</span><span class="tok-w"> </span><span class="tok-n">block</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">dispatch_async</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-o">^</span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-kt">bool</span><span class="tok-w"> </span><span class="tok-n">run</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">dispatch_get_context</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-c1">//  only execute the block if the queue is available</span>
+<span class="tok-w">        </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">run</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">block</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-k">else</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">printf</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-s">&quot;cancelled</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-nf">main</span><span class="tok-p">(</span><span class="tok-kt">int</span><span class="tok-w"> </span><span class="tok-n">argc</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">char</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-n">argv</span><span class="tok-p">[])</span><span class="tok-w"></span>
+<span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">dispatch_queue_t</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">m_dispatch_queue_create</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-s">&quot;com.apple.test&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">NULL</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">for</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-kt">unsigned</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-o">&lt;</span><span class="tok-w"> </span><span class="tok-mi">5</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-o">++</span><span class="tok-w"> </span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-n">m_dispatch_async</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-o">^</span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">printf</span><span class="tok-p">(</span><span class="tok-s">&quot;executing block %u</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">i</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">            </span><span class="tok-n">sleep</span><span class="tok-p">(</span><span class="tok-mi">1</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">sleep</span><span class="tok-p">(</span><span class="tok-mi">2</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">m_dispatch_release</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">q</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">sleep</span><span class="tok-p">(</span><span class="tok-mi">5</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<p>Following the code, the output should look something like below. Depending on the timing of your system, the number of blocks that execute might differ.</p>
+<p>Output:</p>
+<pre><code>executing block 0
+executing block 1
+cancelled
+cancelled
+cancelled</code></pre>
+<p>It’s a dirty solution, but hey…</p>
+</article>
+<p class="back-link"><a href="index.html">&larr; All posts</a></p>
+
+</main>
+<footer class="site-footer">
+  <span>&copy; 2026 Kiranbir Sodhia</span>
+  <a href="https://www.linkedin.com/in/kiranbir" target="_blank" rel="noopener">LinkedIn</a>
+</footer>
+</body>
+</html>

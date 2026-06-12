@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using Tools Properly (Analyzing Performance with LLVM Intermediates) | Way of the Peaceful Coder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=optional" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-title" href="../index.html">Way of the Peaceful Coder</a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="../publications.html">Publications</a>
+    <a href="../blog/index.html" class="active">Blog</a>
+    <a href="../reading.html">Reading</a>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>Using Tools Properly (Analyzing Performance with LLVM Intermediates)</h1>
+    <p class="post-meta">April 18, 2013 &middot; 2 min read</p>
+  </header>
+<p>I was looking at some code using a macro to read a uint32_t from a buffer received from a remote device. It looked something like this, give or take a few casts:</p>
+<pre><code class="code-c"><span class="tok-cp">#define rd_uint32( p ) ( p[0] | ( p[1] &lt;&lt; 8 ) | ( p[2] &lt;&lt; 16 ) | ( p[3] &lt;&lt; 24 ) )</span>
+<span class="tok-kt">uint32_t</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">rd_uint32</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-n">buffer</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<p>At first I didn’t realize why the author overcomplicated this, as they could’ve just written something like below:</p>
+<pre><code class="code-c"><span class="tok-kt">uint32_t</span><span class="tok-w"> </span><span class="tok-n">n</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-p">(</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-kt">uint32_t</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-n">buffer</span><span class="tok-w"> </span><span class="tok-p">);</span><span class="tok-w"></span></code></pre>
+<p>It took me a while to realize they were writing endian-independent code. So I started questioning why we didn’t use the built-in EndianU32_BtoN or EndianU32_LtoN, and whether the compiler was smart enough to know it could perform a direct access based on the endianess of the host. I wrote two small programs with each snippet and tried to disassemble them. Since I recently transitioned to clang, I was trying to find equivalent commandline options as gcc -S. I kept on getting LLVM intermediates and eventually saw the disassembly was the same. It then hit me to check what was actually in the LLVM intermediate. What I found was an easily readable, architecture-indpendent code listing. Both snippets of course had the same listing.</p>
+<pre><code class="code-llvm"><span class="tok-k">target</span><span class="tok-w"> </span><span class="tok-k">datalayout</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-s">&quot;e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128&quot;</span><span class="tok-w"></span>
+<span class="tok-k">target</span><span class="tok-w"> </span><span class="tok-k">triple</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-s">&quot;x86_64-apple-macosx10.8.2&quot;</span><span class="tok-w"></span>
+
+<span class="tok-k">define</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-w"> </span><span class="tok-vg">@main</span><span class="tok-p">(</span><span class="tok-kt">i32</span><span class="tok-w"> </span><span class="tok-nv">%argc</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">i8</span><span class="tok-p">**</span><span class="tok-w"> </span><span class="tok-k">nocapture</span><span class="tok-w"> </span><span class="tok-nv">%argv</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-k">nounwind</span><span class="tok-w"> </span><span class="tok-k">uwtable</span><span class="tok-w"> </span><span class="tok-k">ssp</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-nv">%n</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-k">alloca</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">align</span><span class="tok-w"> </span><span class="tok-m">4</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">store</span><span class="tok-w"> </span><span class="tok-k">volatile</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-w"> </span><span class="tok-m">19088743</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-p">*</span><span class="tok-w"> </span><span class="tok-nv">%n</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">align</span><span class="tok-w"> </span><span class="tok-m">4</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">ret</span><span class="tok-w"> </span><span class="tok-kt">i32</span><span class="tok-w"> </span><span class="tok-m">0</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+<p>So I learned a lesson. When you’re transitioning to new tools like clang or lldb, or just trying to find a git command equivalent to the svn command you are used to, take a step back. There’s a reason why people designed these tools differently from their predecessors, and it might be beneficial to you. In this case, LLVM showed me what I wanted without having to dive into bare-knuckle assembly code.</p>
+<p>You can find more information on the LLVM language at <a href="http://llvm.org/docs/LangRef.html.">http://llvm.org/docs/LangRef.html.</a></p>
+</article>
+<p class="back-link"><a href="index.html">&larr; All posts</a></p>
+
+</main>
+<footer class="site-footer">
+  <span>&copy; 2026 Kiranbir Sodhia</span>
+  <a href="https://www.linkedin.com/in/kiranbir" target="_blank" rel="noopener">LinkedIn</a>
+</footer>
+</body>
+</html>
