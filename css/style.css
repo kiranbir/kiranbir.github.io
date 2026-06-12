@@ -72,25 +72,28 @@ main {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
+  flex-wrap: nowrap;
+  gap: 1.5rem;
   border-bottom: none;
 }
 .site-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
   border-bottom: none;
   color: var(--navy);
 }
 .site-title:hover { color: var(--gold); }
 .site-header nav {
   display: flex;
-  gap: 1.4rem;
+  flex-shrink: 0;
+  gap: 1.2rem;
 }
 .site-header nav a {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -502,4 +505,8 @@ main.home { max-width: none; padding: 0; }
   .hero h1 { font-size: 2.2rem; }
   h1 { font-size: 1.9rem; }
   html { font-size: 14px; }
+  .site-header { gap: 0.8rem; }
+  .site-title { font-size: 0.85rem; letter-spacing: 0.06em; }
+  .site-header nav { gap: 0.7rem; }
+  .site-header nav a { font-size: 0.68rem; letter-spacing: 0.06em; }
 }
