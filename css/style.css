@@ -72,8 +72,8 @@ main {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  flex-wrap: nowrap;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
   border-bottom: none;
 }
 .site-title {
@@ -90,6 +90,7 @@ main {
   display: flex;
   flex-shrink: 0;
   gap: 1.2rem;
+  margin-left: auto; /* keeps the menu flush right, even if it wraps to its own row */
 }
 .site-header nav a {
   font-size: 0.8rem;
@@ -289,9 +290,13 @@ main {
 main.home { max-width: none; padding: 0; }
 
 @media (max-width: 640px) {
-  .timeline li { grid-template-columns: 1fr; }
-  .tl-rail { display: none; }
-  .tl-label { padding-top: 0; margin-bottom: 0.25rem; }
+  /* keep the rail + dots; move the label above the content instead of beside it */
+  .timeline li { grid-template-columns: 18px 1fr; column-gap: 1rem; padding-bottom: 2rem; }
+  .tl-label { grid-column: 2; grid-row: 1; padding-top: 0; margin-bottom: 0.3rem; }
+  .tl-rail { grid-column: 1; grid-row: 1 / span 2; }
+  .tl-rail::after { bottom: -0.9rem; }
+  .timeline li > div { grid-column: 2; grid-row: 2; }
+  .band-inner { padding: 2.4rem 1.25rem; }
   .offclock { grid-template-columns: 1fr; gap: 0.8rem; }
 }
 
@@ -504,9 +509,10 @@ main.home { max-width: none; padding: 0; }
 @media (max-width: 600px) {
   .hero h1 { font-size: 2.2rem; }
   h1 { font-size: 1.9rem; }
-  html { font-size: 14px; }
-  .site-header { gap: 0.8rem; }
-  .site-title { font-size: 0.85rem; letter-spacing: 0.06em; }
-  .site-header nav { gap: 0.7rem; }
-  .site-header nav a { font-size: 0.68rem; letter-spacing: 0.06em; }
+  html { font-size: 15px; }
+  .site-header { gap: 0.4rem 0.8rem; padding: 1.5rem 1.25rem 0; }
+  .site-title { font-size: 0.95rem; letter-spacing: 0.08em; }
+  .site-header nav { gap: 0.9rem; }
+  .site-header nav a { font-size: 0.75rem; letter-spacing: 0.08em; }
+  main { padding: 2.2rem 1.25rem 3rem; }
 }
